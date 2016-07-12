@@ -42,6 +42,7 @@ import re
 import sys
 import json
 import logging
+import datetime
 from datetime import timedelta
 import smtplib
 import ssl
@@ -648,7 +649,7 @@ class PiGarageAlert(object):
                         alert = door['alerts'][alert_states[name]]
 
                         # Has the time elapsed and is this the state to trigger the alert?
-                        if time_in_state > alert['time'] and state == alert['state']:
+                        if time_in_state > alert['time'] and state == alert['state'] and datetime.datetime.now().time().hour > 21:
                             send_alerts(self.logger, alert_senders, alert['recipients'], name, "%s has been %s for %d seconds!" % (name, state, time_in_state), state)
                             alert_states[name] += 1
 
