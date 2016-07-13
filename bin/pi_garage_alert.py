@@ -44,6 +44,8 @@ import json
 import logging
 import datetime
 from datetime import timedelta
+from astral import Location
+import pytz
 import smtplib
 import ssl
 import traceback
@@ -626,6 +628,9 @@ class PiGarageAlert(object):
                     name = door['name']
                     state = get_garage_door_state(door['pin'])
                     time_in_state = time.time() - time_of_last_state_change[name]
+                    local_now = pytz.timezone('US/Eastern').localize(datetime.datetime.now())
+                    local_dusk = Location(('Dayton', 'city', 39.7589, -84.1916, 'US/Eastern', 0)).sun()['dusk']
+                    after_dusk = local_now > local_dusk
 
                     # Check if the door has changed state
                     if door_states[name] != state:
@@ -649,7 +654,7 @@ class PiGarageAlert(object):
                         alert = door['alerts'][alert_states[name]]
 
                         # Has the time elapsed and is this the state to trigger the alert?
-                        if time_in_state > alert['time'] and state == alert['state'] and datetime.datetime.now().time().hour > 21:
+                        if time_in_state > alert['time'] and state == alert['state'] and after_dusk:
                             send_alerts(self.logger, alert_senders, alert['recipients'], name, "%s has been %s for %d seconds!" % (name, state, time_in_state), state)
                             alert_states[name] += 1
 
