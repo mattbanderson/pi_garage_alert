@@ -48,6 +48,13 @@ import ssl
 import traceback
 from email.mime.text import MIMEText
 
+import datetime
+import pytz
+
+from astral import LocationInfo
+from astral.sun import sun
+
+
 import requests
 import tweepy
 import RPi.GPIO as GPIO
@@ -761,6 +768,11 @@ class PiGarageAlert:
                     name = door['name']
                     state = get_garage_door_state(door['pin'])
                     time_in_state = time.time() - time_of_last_state_change[name]
+                    local_now = pytz.timezone('US/Eastern').localize(datetime.datetime.now())
+                    city = LocationInfo('Dayton', 'United States', 'US/Eastern', 39.7589, -84.1916)
+                    local_dusk = sun(city.observer, date=local_now)['dusk']
+                    after_dusk = local_now > local_dusk
+
 
                     # Check if the door has changed state
                     if door_states[name] != state:
@@ -784,7 +796,7 @@ class PiGarageAlert:
                         alert = door['alerts'][alert_states[name]]
 
                         # Has the time elapsed and is this the state to trigger the alert?
-                        if time_in_state > alert['time'] and state == alert['state']:
+                        if time_in_state > alert['time'] and state == alert['state'] and after_dusk:
                             send_alerts(self.logger, alert_senders, alert['recipients'], name, "%s has been %s for %d seconds!" % (name, state, time_in_state), state, time_in_state)
                             alert_states[name] += 1
 
