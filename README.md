@@ -1,28 +1,22 @@
 Pi Garage Alert
 ===============
 
-Raspberry Pi Python script to email, tweet, or send an SMS if a garage door is left open.
+Raspberry Pi Python script to email or send an SMS if a garage door is left open.
 
-![Screenshot of garage door SMS alert](http://www.richlynch.com/wp-content/uploads/2013/07/garage_door_sms.png)
 
 Quick Start
 ---------------
 
-Here is a heavily condensed quick start guide. New users are strongly encouraged to read the full documentation at http://www.richlynch.com/code/pi_garage_alert.
-
+This is a heavily condensed quick start guide. New users are strongly encouraged to read the original full documentation: [Part 1](https://web.archive.org/web/20230406173732/https://www.richlynch.com/2013/07/27/pi_garage_alert_1/), [Part 2](https://web.archive.org/web/20230311070645/https://www.richlynch.com/2013/08/04/pi_garage_alert_2/)
+ 
 1. Equipment required
-  1. Raspberry Pi model A or B
+  1. Raspberry Pi model
 	1. 2GB or larger SD card for the RPi filesystem
-	1. Magnetic sensor (e.g. http://www.smarthome.com/7455/Seco-Larm-SM-226L-Garage-Door-Contacts-for-Closed-Circuits/p.aspx)
-	1. USB wifi adapter (if not using Ethernet)
+	1. Magnetic sensor (e.g. https://www.amazon.com/dp/B005H3GCW0)
+	1. USB wifi adapter (if not using Ethernet and your RPi does not have built-in wireless)
 	1. USB power supply for RPi
-1. Connect one wire of the magnetic sensor to a GPIO pin on the RPi and the other to a ground pin on the RPi. It is a good idea to put a 1kohm resistor in series with the sensor to protect the RPi from damage if anything is misconfigured.
-1. Raspberry Pi initial setup
-	1. Follow the guide at http://elinux.org/RPi_Easy_SD_Card_Setup to write the Raspbian image to the SD card.
-	1. Boot the RPi and at raspi-config, expand the filesystem, set the "pi" account password, set the hostname, and enable SSH.
-	1. Reboot the Raspberry Pi
-1. Edit /etc/wpa_supplicant/wpa_supplicant.conf and configure the RPi to connect to your wifi network.
-1. Regenerate the ssh keys for security.
+1. Connect one wire of the magnetic sensor to a GPIO pin on the RPi and the other to a ground pin on the RPi. Putting a 1kohm resistor in series with the sensor can help protect the RPi from damage if anything is misconfigured.
+1. Set up the Raspberry Pi: https://www.raspberrypi.com/documentation/computers/getting-started.html#installing-the-operating-system
 1. Update the packages with `sudo apt-get update && sudo apt-get upgrade`, then install the dependencies:<br>
 sudo apt-get install git python3-dev python3-pip python3-rpi.gpio<br>
 sudo pip3 install -r requirements.txt<br>
