@@ -44,7 +44,6 @@ import json
 import logging
 from datetime import timedelta
 import smtplib
-import ssl
 import traceback
 from email.mime.text import MIMEText
 
@@ -58,8 +57,6 @@ from astral.sun import sun
 import requests
 import tweepy
 import RPi.GPIO as GPIO
-import sleekxmpp
-from sleekxmpp.xmlstream import resolver, cert
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 import slack
@@ -67,217 +64,6 @@ import slack
 sys.path.append('/usr/local/etc')
 import pi_garage_alert_config as cfg
 
-##############################################################################
-# Cisco Spark support
-##############################################################################
-class CiscoSpark:
-    """Class to send Cisco Spark messages"""
-
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-        self.header = None
-        self.rooms = {"items": []}
-        self.room_id = None
-
-    def headers(self):
-        access_token_hdr = 'Bearer ' + cfg.SPARK_ACCESSTOKEN
-        spark_header = {'Authorization': access_token_hdr, 'Content-Type': 'application/json; charset=utf-8'}
-        return spark_header
-
-    def get_rooms(self):
-        uri = 'https://api.ciscospark.com/v1/rooms'
-        resp = requests.get(uri, headers=self.headers)
-        return resp.json()
-
-    def find_room(self, name):
-        room_id = 0
-        for room in self.rooms["items"]:
-            if room["title"] == name:
-                room_id = room["id"]
-                break
-        return room_id
-
-    def add_room(self, name):
-        uri = 'https://api.ciscospark.com/v1/rooms'
-        payload = {"title": name}
-        resp = requests.post(uri, data=json.dumps(payload), headers=self.headers)
-        return resp.json()
-
-    def add_message_to_room(self, message):
-        self.logger.info("In the Spark addMessageToRoom function. Adding to room ID %s", str(self.room_id))
-        uri = "https://api.ciscospark.com/v1/messages"
-        payload = {"roomId": self.room_id, "text": message}
-        resp = requests.post(uri, data=json.dumps(payload), headers=self.headers)
-        return resp.json()
-
-    def send_sparkmsg(self, room_name, message):
-        """Sends a note to the specified Spark Room
-
-        Args:
-            roomName: Name of the Cisco Spark Room to send to.
-            message: body of the message
-        """
-        self.logger.info("Sending Cisco Spark message to %s: message = \"%s\"", room_name, message)
-
-        if cfg.SPARK_ACCESSTOKEN == '':
-            self.logger.error("Cisco Spark access token not specified - unable to send Spark message!")
-
-        self.logger.info("In the Spark block")
-        self.header = self.headers()
-        self.rooms = self.get_rooms()
-        self.room_id = self.find_room(room_name)
-        if self.room_id != 0:
-            self.add_message_to_room(message)
-        else:
-            self.logger.info("Specified room %s was not found! Creating.", room_name)
-            self.add_room(room_name)
-            self.rooms = self.get_rooms()
-            self.room_id = self.find_room(room_name)
-            self.add_message_to_room(message)
-
-##############################################################################
-# Jabber support
-##############################################################################
-
-class Jabber(sleekxmpp.ClientXMPP):
-    """Interfaces with a Jabber instant messaging service"""
-
-    def __init__(self, door_states, time_of_last_state_change):
-        self.logger = logging.getLogger(__name__)
-        self.connected = False
-
-        # Save references to door states for status queries
-        self.door_states = door_states
-        self.time_of_last_state_change = time_of_last_state_change
-
-        if not hasattr(cfg, 'JABBER_ID'):
-            self.logger.debug("Jabber ID not defined - Jabber support disabled")
-            return
-        if cfg.JABBER_ID == '':
-            self.logger.debug("Jabber ID not configured - Jabber support disabled")
-            return
-
-        self.logger.info("Signing into Jabber as %s", cfg.JABBER_ID)
-
-        sleekxmpp.ClientXMPP.__init__(self, cfg.JABBER_ID, cfg.JABBER_PASSWORD)
-
-        # Register event handlers
-        self.add_event_handler("session_start", self.handle_session_start)
-        self.add_event_handler("message", self.handle_message)
-        self.add_event_handler("ssl_invalid_cert", self.ssl_invalid_cert)
-
-        # ctrl-c processing
-        self.use_signals()
-
-        # Setup plugins. Order does not matter.
-        self.register_plugin('xep_0030') # Service Discovery
-        self.register_plugin('xep_0004') # Data Forms
-        self.register_plugin('xep_0060') # PubSub
-        self.register_plugin('xep_0199') # XMPP Ping
-
-        # If you are working with an OpenFire server, you may need
-        # to adjust the SSL version used:
-        # self.ssl_version = ssl.PROTOCOL_SSLv3
-
-        # Connect to the XMPP server and start processing XMPP stanzas.
-        # This will block if the network is down.
-
-        if hasattr(cfg, 'JABBER_SERVER') and hasattr(cfg, 'JABBER_PORT'):
-            # Config file overrode the default server and port
-            if not self.connect((cfg.JABBER_SERVER, cfg.JABBER_PORT)): # pylint: disable=no-member
-                return
-        else:
-            # Use default server and port from DNS SRV records
-            if not self.connect():
-                return
-
-        # Start up Jabber threads and return
-        self.process(block=False)
-        self.connected = True
-
-    def ssl_invalid_cert(self, raw_cert):
-        """Handle an invalid certificate from the Jabber server
-           This may happen if the domain is using Google Apps
-           for their XMPP server and the XMPP server."""
-        hosts = resolver.get_SRV(self.boundjid.server, 5222,
-                                 'xmpp-client',
-                                 resolver=resolver.default_resolver())
-
-        domain_uses_google = False
-        for host, _ in hosts:
-            if host.lower()[-10:] == 'google.com':
-                domain_uses_google = True
-
-        if domain_uses_google:
-            try:
-                if cert.verify('talk.google.com', ssl.PEM_cert_to_DER_cert(raw_cert)):
-                    logging.debug('Google certificate found for %s', self.boundjid.server)
-                    return
-            except cert.CertificateError:
-                pass
-
-        logging.error("Invalid certificate received for %s", self.boundjid.server)
-        self.disconnect()
-
-    def handle_session_start(self, event):
-        """Process the session_start event.
-
-        Typical actions for the session_start event are
-        requesting the roster and broadcasting an initial
-        presence stanza.
-
-        Args:
-            event: An empty dictionary. The session_start
-                   event does not provide any additional
-                   data.
-        """
-        # pylint: disable=unused-argument
-        self.send_presence()
-        self.get_roster()
-
-    def handle_message(self, msg):
-        """Process incoming message stanzas.
-
-        Args:
-            msg: Received message stanza
-        """
-        self.logger.info("Jabber from %s (%s): %s", msg['from'].bare, msg['type'], msg['body'])
-
-        # Only handle one-to-one conversations, and only if authorized
-        # users have been defined
-        if msg['type'] in ('chat', 'normal') and hasattr(cfg, 'JABBER_AUTHORIZED_IDS'):
-            # Check if user is authorized
-            if msg['from'].bare in cfg.JABBER_AUTHORIZED_IDS:
-                if msg['body'].lower() == 'status':
-                    # Generate status report
-                    states = []
-                    for door in cfg.GARAGE_DOORS:
-                        name = door['name']
-                        state = self.door_states[name]
-                        how_long = time.time() - self.time_of_last_state_change[name]
-                        states.append("%s: %s (%s)" % (name, state, format_duration(how_long)))
-                    response = ' / '.join(states)
-                else:
-                    # Invalid command received
-                    response = "I don't understand that command. Valid commands are: status"
-                self.logger.info("Replied to %s: %s", msg['from'], response)
-                msg.reply(response).send()
-            else:
-                self.logger.info("Ignored unauthorized user: %s", msg['from'].bare)
-
-    def send_msg(self, recipient, msg):
-        """Send jabber message to specified recipient"""
-        if not self.connected:
-            self.logger.error("Unable to connect to Jabber - unable to send jabber message!")
-            return
-
-        self.logger.info("Sending Jabber message to %s: %s", recipient, msg)
-        self.send_message(mto=recipient, mbody=msg)
-
-    def terminate(self):
-        """Terminate all jabber threads"""
-        if self.connected:
-            self.disconnect()
 
 ##############################################################################
 # Twilio support
@@ -768,8 +554,8 @@ class PiGarageAlert:
                     name = door['name']
                     state = get_garage_door_state(door['pin'])
                     time_in_state = time.time() - time_of_last_state_change[name]
-                    local_now = datetime.datetime.now().astimezone(pytz.timezone(cfg.TIMEZONE))
-                    city = LocationInfo(cfg.LOC_CITY, cfg.LOC_COUNTRY, cfg.TIMEZONE, cfg.LATITUDE, cfg.LONGITUDE)
+                    local_now = datetime.datetime.now().astimezone(pytz.timezone(cfg.LOC_TIMEZONE))
+                    city = LocationInfo(cfg.LOC_CITY, cfg.LOC_COUNTRY, cfg.LOC_TIMEZONE, cfg.LOC_LATITUDE, cfg.LOC_LONGITUDE)
                     local_dusk = sun(city.observer, date=local_now)['dusk']
                     after_dusk = local_now > local_dusk
 

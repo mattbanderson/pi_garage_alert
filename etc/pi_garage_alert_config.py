@@ -66,15 +66,6 @@ EMAIL_PRIORITY = '1'
 # 1 High, 3 Normal, 5 Low
 
 ##############################################################################
-# Cisco Spark settings
-##############################################################################
-
-# Obtain your access token from https://developer.ciscospark.com, click
-# on your avatar at the top right corner.
-
-SPARK_ACCESSTOKEN = "" #put your access token here between the quotes.
-
-##############################################################################
 # Twitter settings
 ##############################################################################
 
@@ -98,25 +89,6 @@ TWILIO_TOKEN = ''
 
 # SMS will be sent from this phone number
 TWILIO_PHONE_NUMBER = '+11234567890'
-
-##############################################################################
-# Jabber settings
-##############################################################################
-
-# Jabber ID and password that status updates will be sent from
-# Leave this blank to disable Jabber support
-
-JABBER_ID = ''
-JABBER_PASSWORD = ''
-
-# Uncomment to override the default server specified in DNS SRV records
-
-#JABBER_SERVER = 'talk.google.com'
-#JABBER_PORT = 5222
-
-# List of Jabber IDs allowed to perform queries
-
-JABBER_AUTHORIZED_IDS = []
 
 ##############################################################################
 # Google Cloud Messaging settings
