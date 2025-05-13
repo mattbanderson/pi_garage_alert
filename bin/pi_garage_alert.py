@@ -418,14 +418,10 @@ def send_alerts(logger, alert_senders, recipients, subject, msg, state, time_in_
             alert_senders['Twitter'].update_status(msg)
         elif recipient[:4] == 'sms:':
             alert_senders['Twilio'].send_sms(recipient[4:], msg)
-        elif recipient[:7] == 'jabber:':
-            alert_senders['Jabber'].send_msg(recipient[7:], msg)
         elif recipient[:11] == 'pushbullet:':
             alert_senders['Pushbullet'].send_note(recipient[11:], subject, msg)
         elif recipient[:6] == 'ifttt:':
             alert_senders['IFTTT'].send_trigger(recipient[6:], subject, state, '%d' % (time_in_state))
-        elif recipient[:6] == 'spark:':
-            alert_senders['CiscoSpark'].send_sparkmsg(recipient[6:], msg)
         elif recipient == 'gcm':
             alert_senders['Gcm'].send_push(state, msg)
         elif recipient[:6] == 'slack:':
@@ -526,13 +522,11 @@ class PiGarageAlert:
 
             # Create alert sending objects
             alert_senders = {
-                "Jabber": Jabber(door_states, time_of_last_state_change),
                 "Twitter": Twitter(),
                 "Twilio": Twilio(),
                 "Email": Email(),
                 "Pushbullet": Pushbullet(),
                 "IFTTT": IFTTT(),
-                "CiscoSpark": CiscoSpark(),
                 "Gcm": GoogleCloudMessaging(),
                 "Slack": Slack()
             }
@@ -607,7 +601,6 @@ class PiGarageAlert:
             logging.critical("%s", traceback.format_exc())
 
         GPIO.cleanup() # pylint: disable=no-member
-        alert_senders['Jabber'].terminate()
 
 if __name__ == "__main__":
     PiGarageAlert().main()
