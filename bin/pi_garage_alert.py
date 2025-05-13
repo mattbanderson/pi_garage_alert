@@ -768,8 +768,8 @@ class PiGarageAlert:
                     name = door['name']
                     state = get_garage_door_state(door['pin'])
                     time_in_state = time.time() - time_of_last_state_change[name]
-                    local_now = datetime.datetime.now().astimezone(pytz.timezone('US/Eastern'))
-                    city = LocationInfo('Dayton', 'United States', 'US/Eastern', 39.7589, -84.1916)
+                    local_now = datetime.datetime.now().astimezone(pytz.timezone(cfg.TIMEZONE))
+                    city = LocationInfo(cfg.LOC_CITY, cfg.LOC_COUNTRY, cfg.TIMEZONE, cfg.LATITUDE, cfg.LONGITUDE)
                     local_dusk = sun(city.observer, date=local_now)['dusk']
                     after_dusk = local_now > local_dusk
 

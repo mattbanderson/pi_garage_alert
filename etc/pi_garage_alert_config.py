@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python3
 
 ##############################################################################
 # Global settings
@@ -43,6 +43,15 @@ GARAGE_DOORS = [
 
 # All messages will be logged to stdout and this file
 LOG_FILENAME = "/var/log/pi_garage_alert.log"
+
+##############################################################################
+# Location settings
+##############################################################################
+LOC_CITY = 'New York'
+LOC_COUNTRY = 'United States'
+LOC_TIMEZONE = 'US/Eastern'
+LOC_LATITUDE = 40.7128
+LOC_LONGITUDE = -74.0060
 
 ##############################################################################
 # Email settings
