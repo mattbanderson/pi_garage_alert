@@ -28,7 +28,7 @@ This is a heavily condensed quick start guide. New users are strongly encouraged
 	1. `[sudo] cp etc/pi_garage_alert_config.py /usr/local/etc/`
 	1. `[sudo] chown pi /usr/local/etc/pi_garage_alert_config.py`
 1. Install Python dependencies:
-	1. `[sudo] chown pi -R /usr/local/etc/pi_garage_alert`
+	1. `[sudo] chown pi -R /usr/local/sbin/pi_garage_alert`
 	1. `cd /usr/local/sbin/pi_garage_alert`
 	1. `[sudo] python3 -m venv venv`
 	1. `source venv/bin/activate`
