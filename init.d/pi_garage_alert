@@ -19,7 +19,7 @@ PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="Pi Garage Alert"
 NAME=pi_garage_alert
 DAEMON=/usr/local/sbin/$NAME/venv/bin/python3
-DAEMON_ARGS="/usr/local/sbin/$NAME/$NAME.py >> /var/log/pi_garage_alert.log 2>&1"
+DAEMON_ARGS="/usr/local/sbin/$NAME/$NAME.py"
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
