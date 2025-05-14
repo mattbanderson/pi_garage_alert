@@ -56,6 +56,8 @@ from astral.sun import sun
 from geopy.geocoders import Nominatim
 from timezonefinder import TimezoneFinder
 
+from azure.communication.email import EmailClient
+
 import requests
 import tweepy
 import RPi.GPIO as GPIO
@@ -178,6 +180,51 @@ class Twitter:
                 self.twitter_api.update_status(status=truncate(msg, 140))
             except tweepy.error.TweepError as ex:
                 self.logger.error("Unable to update Twitter status: %s", ex)
+
+
+##############################################################################
+# Azure Communication Service Email support
+##############################################################################
+
+class AzureAcsEmail:
+    """Class to send emails using Azure Communication Service"""
+
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+
+def send_email(self, recipient, subject, msg):
+        """Sends an email to the specified email address using the Azure Communication Service.
+
+        Args:
+            recipient: Email address to send to.
+            subject: Email subject.
+            msg: Body of email to send.
+        """
+        self.logger.info("Sending email to %s: subject = \"%s\", message = \"%s\"", recipient, subject, msg)
+
+        try:
+            connection_string = cfg.ACS_CONN_STR
+            client = EmailClient.from_connection_string(connection_string)
+
+            message = {
+                "senderAddress": cfg.ACS_FROM,
+                "recipients": {
+                    "to": [{"address": recipient}]
+                },
+                "content": {
+                    "subject": subject,
+                    "plainText": msg
+                },
+                
+            }
+
+            poller = client.begin_send(message)
+            result = poller.result()
+            self.logger.info("ACS email message sent")
+
+        except Exception as ex:
+            self.logger.exception(ex)
+
 
 ##############################################################################
 # Email support
@@ -414,6 +461,8 @@ def send_alerts(logger, alert_senders, recipients, subject, msg, state, time_in_
     for recipient in recipients:
         if recipient[:6] == 'email:':
             alert_senders['Email'].send_email(recipient[6:], subject, msg)
+        elif recipient[:10] == 'acs_email:':
+            alert_senders['AzureAcsEmail'].send_email(recipient[10:], subject, msg)
         elif recipient[:11] == 'twitter_dm:':
             alert_senders['Twitter'].direct_msg(recipient[11:], msg)
         elif recipient == 'tweet':
@@ -530,7 +579,8 @@ class PiGarageAlert:
                 "Pushbullet": Pushbullet(),
                 "IFTTT": IFTTT(),
                 "Gcm": GoogleCloudMessaging(),
-                "Slack": Slack()
+                "Slack": Slack(),
+                "AzureAcsEmail": AzureAcsEmail()
             }
 
             # Get location information
