@@ -18,7 +18,7 @@ This is a heavily condensed quick start guide. New users are strongly encouraged
 1. Connect one wire of the magnetic sensor to a GPIO pin on the RPi and the other to a ground pin on the RPi. Putting a 1kohm resistor in series with the sensor can help protect the RPi from damage if anything is misconfigured.
 1. Set up the Raspberry Pi: https://www.raspberrypi.com/documentation/computers/getting-started.html#installing-the-operating-system
 1. Update the packages with `sudo apt-get update && sudo apt-get upgrade`
-1. Install the RPi packages: `sudo apt-get install git python3-dev python3-pip python3-rpi.gpio`
+1. Install the RPi packages: `sudo apt-get install git python3-dev python3-pip libopenblas-dev python3-rpi.gpio`
 1. Edit `etc/pi_garage_alert_config.py` to specify garage doors and alerts
 1. Setup the Python app:
 	1. `[sudo] mkdir /usr/local/sbin/pi_garage_alert`
