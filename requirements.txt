@@ -6,13 +6,19 @@ astral==3.2
 async-timeout==5.0.1
 attrs==25.3.0
 certifi==2025.4.26
+cffi==1.17.1
 chardet==5.2.0
 charset-normalizer==3.4.2
 frozenlist==1.6.0
+geographiclib==2.0
+geopy==2.4.1
+h3==4.2.2
 idna==3.10
 multidict==6.4.3
+numpy==2.2.5
 oauthlib==3.2.2
 propcache==0.3.1
+pycparser==2.22
 PyJWT==2.10.1
 PySocks==1.7.1
 pytz==2025.2
@@ -21,6 +27,7 @@ requests-oauthlib==2.0.0
 RPi.GPIO==0.7.1
 six==1.17.0
 slackclient==2.9.4
+timezonefinder==6.5.9
 tweepy==4.15.0
 twilio==9.6.1
 urllib3==2.4.0

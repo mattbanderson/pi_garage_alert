@@ -47,9 +47,6 @@ LOG_FILENAME = "/var/log/pi_garage_alert.log"
 ##############################################################################
 # Location settings
 ##############################################################################
-LOC_CITY = 'New York'
-LOC_COUNTRY = 'United States'
-LOC_TIMEZONE = 'US/Eastern'
 LOC_LATITUDE = 40.7128
 LOC_LONGITUDE = -74.0060
 

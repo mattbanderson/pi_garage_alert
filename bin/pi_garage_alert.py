@@ -53,6 +53,8 @@ import pytz
 from astral import LocationInfo
 from astral.sun import sun
 
+from geopy.geocoders import Nominatim
+from timezonefinder import TimezoneFinder
 
 import requests
 import tweepy
@@ -531,6 +533,20 @@ class PiGarageAlert:
                 "Slack": Slack()
             }
 
+            # Get location information
+            self.logger.info(f"Getting location info for lat: {cfg.LOC_LATITUDE}, lon: {cfg.LOC_LONGITUDE}")
+            geolocator = Nominatim(user_agent="pi_garage_alert")
+            location = geolocator.reverse((cfg.LOC_LATITUDE, cfg.LOC_LONGITUDE), exactly_one=True)
+
+            address = location.raw.get('address', {})
+            city = address.get('city') or address.get('town') or address.get('village')
+            country = address.get('country')
+
+            tf = TimezoneFinder()
+            timezone_str = tf.timezone_at(lat=cfg.LOC_LATITUDE, lng=cfg.LOC_LONGITUDE)
+            timezone = pytz.timezone(timezone_str)
+            self.logger.info(f"Retrieved location info, city: {city}, country: {country}, timezone: {timezone_str}")          
+
             # Read initial states
             for door in cfg.GARAGE_DOORS:
                 name = door['name']
@@ -548,9 +564,9 @@ class PiGarageAlert:
                     name = door['name']
                     state = get_garage_door_state(door['pin'])
                     time_in_state = time.time() - time_of_last_state_change[name]
-                    local_now = datetime.datetime.now().astimezone(pytz.timezone(cfg.LOC_TIMEZONE))
-                    city = LocationInfo(cfg.LOC_CITY, cfg.LOC_COUNTRY, cfg.LOC_TIMEZONE, cfg.LOC_LATITUDE, cfg.LOC_LONGITUDE)
-                    local_dusk = sun(city.observer, date=local_now)['dusk']
+                    local_now = datetime.datetime.now().astimezone(timezone)
+                    city_loc_info = LocationInfo(city, country, timezone_str, cfg.LOC_LATITUDE, cfg.LOC_LONGITUDE)
+                    local_dusk = sun(city_loc_info.observer, date=local_now)['dusk']
                     after_dusk = local_now > local_dusk
 
 
