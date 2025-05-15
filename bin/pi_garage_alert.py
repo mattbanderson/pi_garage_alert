@@ -192,7 +192,7 @@ class AzureAcsEmail:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
 
-def send_email(self, recipient, subject, msg):
+    def send_email(self, recipient, subject, msg):
         """Sends an email to the specified email address using the Azure Communication Service.
 
         Args:
